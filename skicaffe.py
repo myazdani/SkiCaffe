@@ -30,22 +30,27 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
     image_feature = caffe_features.transform(layer_name = 'pool5/7x7_s1', image_paths = 'image.jpg')
     '''
     def __init__(self, caffe_root):
+        self.caffe_root = caffe_root
         sys.path.insert(0, caffe_root + 'python')
         global caffe
         import caffe
         caffe.set_mode_gpu()
         print 'caffe imported successfully'
 
-    def fit(self, model_prototxt_path, model_trained_path, labels_path, mean_path):
+    def fit(self, model_prototxt_path, model_trained_path, labels_path = 'default-imagenet-labels', mean_path = 'default-imagenet-mean-image'):
+        if labels_path == 'default-imagenet-labels':
+            labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
+        if mean_path == 'default-imagenet-mean-image':
+            mean_path = self.caffe_root + 'python/caffe/imagenet/ilsvrc_2012_mean.npy'
         #global net
         self.net = caffe.Classifier(model_prototxt_path, model_trained_path, mean = np.load(mean_path).mean(1).mean(1), channel_swap = (2,1,0), raw_scale = 255, image_dims = (256,256))
 
-        print 'net loaded successfully'
+        #print 'net loaded successfully'
 
         with open(labels_path) as f:
             self.labels = f.readlines()
 
-        print 'labels loaded successfully'
+        #print 'labels loaded successfully'
         #self.net.blobs['data'].reshape(50,3,227,227)
 
         self.layer_sizes = [(k, v.data.shape) for k, v in self.net.blobs.items()]
@@ -55,12 +60,12 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
 
 
 
-    def transform(self, layer_name, image_paths):
+    def transform(self, layer_name, image_paths, return_type = 'numpy_array'):
         features = []
         for image_path in image_paths:
             input_image = caffe.io.load_image(image_path)
             prediction = self.net.predict([input_image], oversample=False)
-            print os.path.basename(image_path), ' : ' , self.labels[prediction[0].argmax()].strip() , ' (', prediction[0][prediction[0].argmax()] , ')'
+            #print os.path.basename(image_path), ' : ' , self.labels[prediction[0].argmax()].strip() , ' (', prediction[0][prediction[0].argmax()] , ')'
             #np.savetxt(writer, net.blobs[layer_name].data[0].reshape(1,-1), fmt='%.8g')
             f = np.copy(self.net.blobs[layer_name].data[0].reshape(1,-1))
             #print f[:2]
@@ -71,10 +76,11 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         else:
             df = pd.DataFrame(np.asarray(features).squeeze())
 
-        df.columns = [layer_name + '.' + str(column) for column in df.columns]
-        df.index = image_paths
-        return df
-        #return features
+        if return_type == 'pandasDF':
+            df.columns = [layer_name + '.' + str(column) for column in df.columns]
+            df.index = image_paths
+            return df
+        return features
 
     # take an array of shape (n, height, width) or (n, height, width, channels)
     # and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)
@@ -104,7 +110,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         feature = np.copy(self.net.blobs[layer_name].data[0].reshape(1,-1))
         feat = feature.reshape(filter_shape)
         print feat.shape
-        self.vis_square(feat[:max_filter,:,:], padval=2)
+        self.vis_square(feat[:max_filter,:,:], padval=1)
 
 
 
