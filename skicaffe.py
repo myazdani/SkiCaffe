@@ -64,6 +64,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         self.layer_dict = {}
         for k, v in self.net.blobs.items():
             self.layer_dict[k] = v.data.shape
+        return self
 
 
 
