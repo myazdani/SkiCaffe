@@ -99,9 +99,9 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
             return df
 
         if len(image_path) == 1:
-            feature_np = np.asarray(features[0])
+            features_np = np.asarray(features[0])
         else:
-            feature_np = np.asarray(features).squeeze()
+            features_np = np.asarray(features).squeeze()
 
         return features_np
 
