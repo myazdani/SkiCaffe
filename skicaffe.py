@@ -29,26 +29,32 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
 
     image_feature = caffe_features.transform(layer_name = 'pool5/7x7_s1', image_paths = 'image.jpg')
     '''
-    def __init__(self, caffe_root):
+    def __init__(self,model_prototxt_path, caffe_root, model_trained_path, labels_path = 'default-imagenet-labels',
+    mean_path = 'default-imagenet-mean-image', include_labels = True, return_type = 'numpy_array', layer_name = 'prob'):
         self.caffe_root = caffe_root
-        sys.path.insert(0, caffe_root + 'python')
+        self.include_labels = include_labels
+        if labels_path == 'default-imagenet-labels':
+            self.labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
+        if mean_path == 'default-imagenet-mean-image':
+            self.mean_path = self.caffe_root + 'python/caffe/imagenet/ilsvrc_2012_mean.npy'
+
+        self.model_prototxt_path = model_prototxt_path
+        self.model_trained_path = model_trained_path
+        self.return_type = return_type
+        self.layer_name = layer_name
+
+    def fit(self, X=None, y=None):
+        sys.path.insert(0, self.caffe_root + 'python')
         global caffe
         import caffe
         caffe.set_mode_gpu()
         print 'caffe imported successfully'
-
-    def fit(self, model_prototxt_path, model_trained_path, labels_path = 'default-imagenet-labels', mean_path = 'default-imagenet-mean-image', include_labels = True):
-        self.include_labels = include_labels
-        if labels_path == 'default-imagenet-labels':
-            labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
-        if mean_path == 'default-imagenet-mean-image':
-            mean_path = self.caffe_root + 'python/caffe/imagenet/ilsvrc_2012_mean.npy'
         #global net
-        self.net = caffe.Classifier(model_prototxt_path, model_trained_path, mean = np.load(mean_path).mean(1).mean(1), channel_swap = (2,1,0), raw_scale = 255, image_dims = (256,256))
+        self.net = caffe.Classifier(self.model_prototxt_path, self.model_trained_path, mean = np.load(self.mean_path).mean(1).mean(1), channel_swap = (2,1,0), raw_scale = 255, image_dims = (256,256))
 
         #print 'net loaded successfully'
 
-        with open(labels_path) as f:
+        with open(self.labels_path) as f:
             self.labels = f.readlines()
 
         #print 'labels loaded successfully'
@@ -61,7 +67,8 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
 
 
 
-    def transform(self, layer_name, image_paths, return_type = 'numpy_array'):
+    def transform(self, X):
+        image_paths = X
         features = []
         if self.include_labels:
             predicted_labels = []
@@ -76,16 +83,16 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
                 predicted_labels.append(self.labels[pred].strip())
                 predicted_conf.append(prediction[0][pred])
 
-            f = np.copy(self.net.blobs[layer_name].data[0].reshape(1,-1))
+            f = np.copy(self.net.blobs[self.layer_name].data[0].reshape(1,-1))
             #print f[:2]
             features.append(f)
 
-        if return_type == 'pandasDF':
+        if self.return_type == 'pandasDF':
             if len(image_paths) == 1:
                 df = pd.DataFrame(np.asarray(features[0]))
             else:
                 df = pd.DataFrame(np.asarray(features).squeeze())
-            df.columns = [layer_name + '.' + str(column) for column in df.columns]
+            df.columns = [self.layer_name + '.' + str(column) for column in df.columns]
             df.insert(0,'pred.class', predicted_labels)
             df.insert(1,'pred.conf', predicted_conf)
             return df
