@@ -98,7 +98,12 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
             df.insert(1,'pred.conf', predicted_conf)
             return df
 
-        return features
+        if len(image_path) == 1:
+            feature_np = np.asarray(features[0])
+        else:
+            feature_np = np.asarray(features).squeeze()
+
+        return features_np
 
     # take an array of shape (n, height, width) or (n, height, width, channels)
     # and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)
