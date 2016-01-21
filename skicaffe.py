@@ -33,10 +33,9 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
     mean_path = 'default-imagenet-mean-image', include_labels = True, return_type = 'numpy_array', layer_name = 'prob'):
         self.caffe_root = caffe_root
         self.include_labels = include_labels
-        if labels_path == 'default-imagenet-labels':
-            self.labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
-        if mean_path == 'default-imagenet-mean-image':
-            self.mean_path = self.caffe_root + 'python/caffe/imagenet/ilsvrc_2012_mean.npy'
+        self.labels_path = labels_path
+        self.mean_path = mean_path
+
 
         self.model_prototxt_path = model_prototxt_path
         self.model_trained_path = model_trained_path
@@ -49,6 +48,10 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         import caffe
         caffe.set_mode_gpu()
         print 'caffe imported successfully'
+        if self.labels_path == 'default-imagenet-labels':
+            self.labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
+        if self.mean_path == 'default-imagenet-mean-image':
+            self.mean_path = self.caffe_root + 'python/caffe/imagenet/ilsvrc_2012_mean.npy'
         #global net
         self.net = caffe.Classifier(self.model_prototxt_path, self.model_trained_path, mean = np.load(self.mean_path).mean(1).mean(1), channel_swap = (2,1,0), raw_scale = 255, image_dims = (256,256))
 
