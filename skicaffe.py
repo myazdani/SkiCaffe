@@ -31,7 +31,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
     image_feature = caffe_features.transform(layer_name = 'pool5/7x7_s1', image_paths = 'image.jpg')
     '''
     def __init__(self,model_prototxt_path, caffe_root, model_trained_path, labels_path = 'default-imagenet-labels',
-    mean_path = 'default-imagenet-mean-image', include_labels = True, return_type = 'numpy_array', layer_name = 'prob'):
+    mean_path = 'default-imagenet-mean-image', include_labels = True, return_type = 'numpy_array'):
         self.caffe_root = caffe_root
         self.include_labels = include_labels
         self.labels_path = labels_path
@@ -41,7 +41,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         self.model_prototxt_path = model_prototxt_path
         self.model_trained_path = model_trained_path
         self.return_type = return_type
-        self.layer_name = layer_name
+        #self.layer_name = layer_name
 
     def fit(self, X=None, y=None):
         sys.path.insert(0, self.caffe_root + 'python')
@@ -69,11 +69,19 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         self.layer_dict = {}
         for k, v in self.net.blobs.items():
             self.layer_dict[k] = v.data.shape
+            
+        self.last_layer = self.layer_sizes[-2][0]
+        #self.layer_name = last_layer
         return self
 
 
 
-    def transform(self, X):
+    def transform(self, X, layer_name = None):
+        if layer_name is None:
+            last_layer = self.layer_sizes[-2][0]
+            self.layer_name = last_layer
+        else:
+            self.layer_name = layer_name
         image_paths = X
         features = []
         if self.include_labels:
@@ -99,8 +107,9 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
             else:
                 df = pd.DataFrame(np.asarray(features).squeeze())
             df.columns = [self.layer_name + '.' + str(column) for column in df.columns]
-            df.insert(0,'pred.class', predicted_labels)
-            df.insert(1,'pred.conf', predicted_conf)
+            if self.include_labels:
+                df.insert(0,'pred.class', predicted_labels)
+                df.insert(1,'pred.conf', predicted_conf)
             return df
 
         if len(image_path) == 1:
