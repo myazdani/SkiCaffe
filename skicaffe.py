@@ -3,7 +3,8 @@ import sys
 import numpy as np
 import pandas as pd
 import os
-import matplotlib.pyplot as plt
+
+
 
 class SkiCaffe(BaseEstimator, TransformerMixin):
     '''Compute the features from a layer of a pre-trained neural network from
@@ -47,6 +48,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         global caffe
         import caffe
         caffe.set_mode_gpu()
+        caffe.set_device(1)
         print 'caffe imported successfully'
         if self.labels_path == 'default-imagenet-labels':
             self.labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
@@ -107,36 +109,6 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
             features_np = np.asarray(features).squeeze()
 
         return features_np
-
-    # take an array of shape (n, height, width) or (n, height, width, channels)
-    # and visualize each (height, width) thing in a grid of size approx. sqrt(n) by sqrt(n)
-    def vis_square(self, data, padsize=1, padval=0):
-        data -= data.min()
-        data /= data.max()
-
-        # force the number of filters to be square
-        n = int(np.ceil(np.sqrt(data.shape[0])))
-        padding = ((0, n ** 2 - data.shape[0]), (0, padsize), (0, padsize)) + ((0, 0),) * (data.ndim - 3)
-        data = np.pad(data, padding, mode='constant', constant_values=(padval, padval))
-
-        # tile the filters into an image
-        data = data.reshape((n, n) + data.shape[1:]).transpose((0, 2, 1, 3) + tuple(range(4, data.ndim + 1)))
-        data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
-
-        plt.imshow(data)
-
-    def vis_img_feature(self, layer_name, image_path, num_filters = 'all'):
-        filter_shape = self.layer_dict[layer_name][1:]
-        if num_filters == 'all':
-            max_filter = filter_shape[0]
-        else:
-            max_filter = num_filters
-        input_image = caffe.io.load_image(image_path)
-        prediction = self.net.predict([input_image], oversample=False)
-        feature = np.copy(self.net.blobs[layer_name].data[0].reshape(1,-1))
-        feat = feature.reshape(filter_shape)
-        print feat.shape
-        self.vis_square(feat[:max_filter,:,:], padval=1)
 
 
 
