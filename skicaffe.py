@@ -31,7 +31,8 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
     image_feature = caffe_features.transform(layer_name = 'pool5/7x7_s1', image_paths = 'image.jpg')
     '''
     def __init__(self,model_prototxt_path, caffe_root, model_trained_path, labels_path = 'default-imagenet-labels',
-    mean_path = 'default-imagenet-mean-image', include_labels = True, return_type = 'numpy_array'):
+    mean_path = 'default-imagenet-mean-image', include_labels = True, return_type = 'numpy_array', 
+                 include_image_paths = False):
         self.caffe_root = caffe_root
         self.include_labels = include_labels
         self.labels_path = labels_path
@@ -41,7 +42,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         self.model_prototxt_path = model_prototxt_path
         self.model_trained_path = model_trained_path
         self.return_type = return_type
-        #self.layer_name = layer_name
+        self.include_image_paths = include_image_paths
 
     def fit(self, X=None, y=None):
         sys.path.insert(0, self.caffe_root + 'python')
@@ -110,6 +111,9 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
             if self.include_labels:
                 df.insert(0,'pred.class', predicted_labels)
                 df.insert(1,'pred.conf', predicted_conf)
+            if self.include_image_paths:
+                image_paths_df = pd.DataFrame({'image_paths': image_paths})
+                df = pd.concat([image_paths_df, df], axis=1)
             return df
 
         if len(image_path) == 1:
