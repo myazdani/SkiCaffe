@@ -49,7 +49,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         global caffe
         import caffe
         caffe.set_mode_gpu()
-        caffe.set_device(1)
+        caffe.set_device(0)
         print 'caffe imported successfully'
         if self.labels_path == 'default-imagenet-labels':
             self.labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
