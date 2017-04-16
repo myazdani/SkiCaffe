@@ -32,7 +32,7 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
     '''
     def __init__(self,model_prototxt_path, caffe_root, model_trained_path, labels_path = 'default-imagenet-labels',
     mean_path = 'default-imagenet-mean-image', include_labels = True, return_type = 'numpy_array', 
-                 include_image_paths = False):
+                 include_image_paths = False, gpu_device = 0):
         self.caffe_root = caffe_root
         self.include_labels = include_labels
         self.labels_path = labels_path
@@ -43,13 +43,15 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         self.model_trained_path = model_trained_path
         self.return_type = return_type
         self.include_image_paths = include_image_paths
+        
+        self.gpu_device = gpu_device
 
-    def fit(self, X=None, y=None, gpu_device=0):
+    def fit(self, X=None, y=None):
         sys.path.insert(0, self.caffe_root + 'python')
         global caffe
         import caffe
         caffe.set_mode_gpu()
-        caffe.set_device(gpu_device)
+        caffe.set_device(self.gpu_device)
         print 'caffe imported successfully'
         if self.labels_path == 'default-imagenet-labels':
             self.labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
