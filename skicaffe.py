@@ -88,7 +88,11 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         if self.include_labels:
             predicted_labels = []
             predicted_conf = []
+        total_image_paths = len(image_paths)
+        image_idx = -1 #For keeping track of transformation progress
         for image_path in image_paths:
+            image_idx +=1
+            print '\rTransforming image '+str(image_idx)+' of'+str(total_image_paths)
             input_image = caffe.io.load_image(image_path)
             prediction = self.net.predict([input_image], oversample=False)
             #print os.path.basename(image_path), ' : ' , self.labels[prediction[0].argmax()].strip() , ' (', prediction[0][prediction[0].argmax()] , ')'
