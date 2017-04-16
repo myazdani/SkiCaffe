@@ -44,12 +44,12 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         self.return_type = return_type
         self.include_image_paths = include_image_paths
 
-    def fit(self, X=None, y=None):
+    def fit(self, X=None, y=None, gpu_device=0):
         sys.path.insert(0, self.caffe_root + 'python')
         global caffe
         import caffe
         caffe.set_mode_gpu()
-        caffe.set_device(0)
+        caffe.set_device(gpu_device)
         print 'caffe imported successfully'
         if self.labels_path == 'default-imagenet-labels':
             self.labels_path = self.caffe_root + 'data/ilsvrc12/synset_words.txt'
