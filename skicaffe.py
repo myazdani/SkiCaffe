@@ -94,7 +94,10 @@ class SkiCaffe(BaseEstimator, TransformerMixin):
         image_idx = -1 #For keeping track of transformation progress
         for image_path in image_paths:
             image_idx +=1
-            print '\rTransforming image '+str(image_idx)+' of'+str(total_image_paths)
+            try:
+                print '\rTransforming image '+str(image_idx)+' of'+str(total_image_paths)
+            except SyntaxError:
+                print('\rTransforming image '+str(image_idx)+' of'+str(total_image_paths))
             input_image = caffe.io.load_image(image_path)
             prediction = self.net.predict([input_image], oversample=False)
             #print os.path.basename(image_path), ' : ' , self.labels[prediction[0].argmax()].strip() , ' (', prediction[0][prediction[0].argmax()] , ')'
@@ -146,4 +149,7 @@ if __name__ == "__main__":
     caffe_features.fit(model_prototxt, model_trained, imagenet_labels, mean_path)
     image_path = '/usr/local/src/caffe/caffe-master/examples/images/cat.jpg'
     res = caffe_features.transform(layer_name = 'pool5/7x7_s1', image_paths = [image_path])
-    print 'number of features', len(res)
+    try:
+        print 'number of features', len(res)
+    except SyntaxError:
+        print('number of features', len(res))
